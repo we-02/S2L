@@ -2,7 +2,7 @@
 # ─── S2L Launcher ────────────────────────────────────────────────────
 set -e
 
-REPO_URL="https://github.com/aftabnadim/S2L.git"
+REPO_URL="https://github.com/we-02/S2L.git"
 INSTALL_DIR="$HOME/S2L"
 ENV_NAME="S2L"
 PYTHON_VER="3.11"

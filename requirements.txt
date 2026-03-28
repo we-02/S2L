@@ -1,0 +1,23 @@
+# Core
+numpy>=1.24.0,<2.1
+matplotlib>=3.7.0
+opencv-python>=4.8.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+XlsxWriter>=3.1.0
+scikit-image>=0.20.0
+scipy>=1.10.0
+tqdm>=4.65.0
+pillow>=10.0.0
+
+# GUI
+PyQt6>=6.5.0
+
+# Segmentation engines
+cellpose[gui]>=4.0.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# StarDist (optional — requires numpy<2.1 and numba)
+stardist
+numba>=0.57.0

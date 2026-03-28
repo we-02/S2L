@@ -1,8 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: ─── S2L Launcher ────────────────────────────────────────────────────
-set REPO_URL=https://github.com/we-02/S2L.git
+set REPO_URL=https://github.com/aftabnadim/S2L.git
 set INSTALL_DIR=%USERPROFILE%\S2L
 set ENV_NAME=S2L
 set PYTHON_VER=3.11
@@ -48,8 +47,10 @@ if exist "%INSTALL_DIR%\.git" (
 )
 
 :: ─── Create conda env if needed ──────────────────────────────────────
+set FIRST_RUN=0
 conda env list | findstr /b "%ENV_NAME% " >nul 2>&1
 if errorlevel 1 (
+    set FIRST_RUN=1
     echo [*] Creating conda environment '%ENV_NAME%' with Python %PYTHON_VER%...
     call conda create -n %ENV_NAME% python=%PYTHON_VER% -y
     if errorlevel 1 (
@@ -57,14 +58,19 @@ if errorlevel 1 (
         pause
         exit /b 1
     )
+) else (
+    echo [*] Environment '%ENV_NAME%' exists.
+)
 
-    echo [*] Installing core dependencies...
-    call conda run -n %ENV_NAME% pip install -r requirements.txt
-    if errorlevel 1 (
-        echo [WARN] Some dependencies failed to install.
-    )
+:: ─── Always sync requirements ────────────────────────────────────────
+echo [*] Syncing dependencies...
+call conda run -n %ENV_NAME% pip install -r requirements.txt --quiet 2>nul
+if errorlevel 1 (
+    echo [WARN] Some dependencies failed to install.
+)
 
-    :: ─── GPU Detection ───────────────────────────────────────────────
+:: ─── GPU setup (first run only) ──────────────────────────────────────
+if !FIRST_RUN!==1 (
     echo.
     echo [*] Detecting GPU...
     set HAS_NVIDIA=0
@@ -78,21 +84,18 @@ if errorlevel 1 (
         set /p USE_CUDA="    Install PyTorch with CUDA support? [Y/n]: "
         if /i "!USE_CUDA!"=="n" (
             echo [*] Installing PyTorch CPU-only...
-            call conda run -n %ENV_NAME% pip install torch torchvision
+            call conda run -n %ENV_NAME% pip install torch torchvision --quiet
         ) else (
             echo [*] Installing PyTorch with CUDA...
             call conda run -n %ENV_NAME% pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
         )
     ) else (
         echo [*] No NVIDIA GPU detected. Installing PyTorch CPU-only...
-        call conda run -n %ENV_NAME% pip install torch torchvision
+        call conda run -n %ENV_NAME% pip install torch torchvision --quiet
     )
-
     echo.
     echo [*] Setup complete.
     echo.
-) else (
-    echo [*] Environment '%ENV_NAME%' already exists. Skipping setup.
 )
 
 :: ─── Launch ──────────────────────────────────────────────────────────

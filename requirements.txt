@@ -21,3 +21,4 @@ torchvision>=0.15.0
 # StarDist (optional — requires numpy<2.1 and numba)
 stardist
 numba>=0.57.0
+tensorflow

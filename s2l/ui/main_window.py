@@ -499,41 +499,35 @@ class SegmentationPage(QWidget):
         fl_title.setObjectName("SectionTitle")
         fl.addWidget(fl_title)
 
-        # well filter
-        well_lbl = QLabel("Wells")
-        well_lbl.setObjectName("FieldLabel")
-        fl.addWidget(well_lbl)
-        self._well_checks_layout = QHBoxLayout()
-        self._well_checks_layout.setSpacing(8)
-        self._well_checks_layout.addStretch()
-        fl.addLayout(self._well_checks_layout)
+        def _filter_section(label_text):
+            """Create a filter section with label, select/unselect buttons, and grid."""
+            lbl = QLabel(label_text)
+            lbl.setObjectName("FieldLabel")
+            fl.addWidget(lbl)
 
-        # stage filter
-        stage_lbl = QLabel("Stage")
-        stage_lbl.setObjectName("FieldLabel")
-        fl.addWidget(stage_lbl)
-        self._stage_checks_layout = QHBoxLayout()
-        self._stage_checks_layout.setSpacing(8)
-        self._stage_checks_layout.addStretch()
-        fl.addLayout(self._stage_checks_layout)
+            btn_row = QHBoxLayout()
+            btn_row.setSpacing(6)
+            sel_btn = QPushButton("Select All")
+            sel_btn.setFixedHeight(24)
+            sel_btn.setFixedWidth(90)
+            unsel_btn = QPushButton("Unselect All")
+            unsel_btn.setFixedHeight(24)
+            unsel_btn.setFixedWidth(90)
+            btn_row.addWidget(sel_btn)
+            btn_row.addWidget(unsel_btn)
+            btn_row.addStretch()
+            fl.addLayout(btn_row)
 
-        # channel filter
-        chan_lbl = QLabel("Channel")
-        chan_lbl.setObjectName("FieldLabel")
-        fl.addWidget(chan_lbl)
-        self._chan_checks_layout = QHBoxLayout()
-        self._chan_checks_layout.setSpacing(8)
-        self._chan_checks_layout.addStretch()
-        fl.addLayout(self._chan_checks_layout)
+            grid = QGridLayout()
+            grid.setSpacing(6)
+            fl.addLayout(grid)
 
-        # type filter
-        type_lbl = QLabel("Type")
-        type_lbl.setObjectName("FieldLabel")
-        fl.addWidget(type_lbl)
-        self._type_checks_layout = QHBoxLayout()
-        self._type_checks_layout.setSpacing(8)
-        self._type_checks_layout.addStretch()
-        fl.addLayout(self._type_checks_layout)
+            return grid, sel_btn, unsel_btn
+
+        self._well_checks_layout, self._well_sel_btn, self._well_unsel_btn = _filter_section("Wells")
+        self._stage_checks_layout, self._stage_sel_btn, self._stage_unsel_btn = _filter_section("Stage")
+        self._chan_checks_layout, self._chan_sel_btn, self._chan_unsel_btn = _filter_section("Channel")
+        self._type_checks_layout, self._type_sel_btn, self._type_unsel_btn = _filter_section("Type")
 
         self._filter_frame.setVisible(False)
         sw_lay.addWidget(self._filter_frame)
@@ -810,23 +804,46 @@ class SegmentationPage(QWidget):
 
         self._filter_checks = {}  # (category, value) -> QCheckBox
 
-        def _populate(layout, category, values):
-            # clear existing
-            while layout.count() > 1:
-                item = layout.takeAt(0)
+        COLS = 5  # checkboxes per row
+
+        def _populate(grid, category, values, sel_btn, unsel_btn):
+            # clear existing widgets from grid
+            while grid.count():
+                item = grid.takeAt(0)
                 if item.widget():
                     item.widget().deleteLater()
-            for val in values:
+
+            cbs = []
+            for i, val in enumerate(values):
                 cb = QCheckBox(val)
                 cb.setChecked(True)
                 cb.stateChanged.connect(lambda _, c=category, v=val: self._on_filter_changed())
                 self._filter_checks[(category, val)] = cb
-                layout.insertWidget(layout.count() - 1, cb)
+                grid.addWidget(cb, i // COLS, i % COLS)
+                cbs.append(cb)
 
-        _populate(self._well_checks_layout, "well", wells)
-        _populate(self._stage_checks_layout, "stage", stages)
-        _populate(self._chan_checks_layout, "channel", channels)
-        _populate(self._type_checks_layout, "type", types)
+            # wire select / unselect buttons
+            try:
+                sel_btn.clicked.disconnect()
+            except TypeError:
+                pass
+            try:
+                unsel_btn.clicked.disconnect()
+            except TypeError:
+                pass
+            sel_btn.clicked.connect(lambda: self._set_all_checks(cbs, True))
+            unsel_btn.clicked.connect(lambda: self._set_all_checks(cbs, False))
+
+        _populate(self._well_checks_layout, "well", wells, self._well_sel_btn, self._well_unsel_btn)
+        _populate(self._stage_checks_layout, "stage", stages, self._stage_sel_btn, self._stage_unsel_btn)
+        _populate(self._chan_checks_layout, "channel", channels, self._chan_sel_btn, self._chan_unsel_btn)
+        _populate(self._type_checks_layout, "type", types, self._type_sel_btn, self._type_unsel_btn)
+
+    def _set_all_checks(self, checkboxes, checked: bool):
+        """Set all checkboxes in a list to checked/unchecked and update filters."""
+        for cb in checkboxes:
+            cb.setChecked(checked)
+        self._on_filter_changed()
 
     def _on_filter_changed(self):
         self._update_filter_count()

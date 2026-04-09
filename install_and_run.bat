@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set REPO_URL=https://github.com/aftabnadim/S2L.git
+set REPO_URL=https://github.com/we-02/S2L.git
 set INSTALL_DIR=%USERPROFILE%\S2L
 set ENV_NAME=S2L
 set PYTHON_VER=3.11
